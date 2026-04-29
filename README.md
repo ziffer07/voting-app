@@ -3,8 +3,8 @@
 In this file we have a code that is written on solana blockchain and is deployable on the devnet of solana. This is a voting application which takes initializes
 votes, then initializes the options and finally let's you vote for your candidate. How does this work.
 
-** Anchor ** writes most of the boilerplate therefore, this program is not optimized for compute units. However, one can see how instructions work. We give state 
-to the program using ** #[account] **. Then under the ** #[derive(Accounts)] ** you have all your accounts, which will be used when running the program. For this
+**Anchor** writes most of the boilerplate therefore, this program is not optimized for compute units. However, one can see how instructions work. We give state 
+to the program using **#[account]**. Then under the **#[derive(Accounts)]** you have all your accounts, which will be used when running the program. For this
 program we have assigned user as the person running this program locally. For the user to authorize transactions, you must genrate 
 ``` solana-keygen grid --starts-with vot:1 --ignore-case ``` and store it in you device. This will give you a .json file which has your public and private keys.
 The the Poll Account and Candidate Accounts are Program Derived Addresses (PDA's). This needs to be a PDA because we don't want to give anyone the authority to 
@@ -12,7 +12,7 @@ make changes to our poll and the candidate info. This let's one trust the voting
 
 ### Testing the function
 
-We are using ** LiteSVM ** framework to quickly test the functions. Right now we have only tested initiaze poll and initialize candidate. We need to test the 
+We are using **LiteSVM** framework to quickly test the functions. Right now we have only tested initiaze poll and initialize candidate. We need to test the 
 voting function and the edge cases in case some tries to vote before the start of poll or after the poll has ended. They will be added. When using litesvm you 
 need to assign a payer which we do by generating a new keypair, then we add SOLs to the keypair so the user can initialize poll and candidate. Then, we also 
 need to provide instructions which is in the form of bytes. Then finally we send transactions and test with assert! macro.
