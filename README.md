@@ -38,6 +38,16 @@ new .json keypair file is created in same folder then you can use cp .json /tage
 
             cargo test -- --nocapture
 
-### More Stuff
+### Client Side
 
-I will be adding more tests to the program. Then, I also plan to add a frontend to this.
+Experimented by using Rust for client side development. The code works, we output payer address, solana wallet balance and transaction signature. For the code to work you need to make 2 folders, src and idls, in src you have main.rs and in idls you have to copy the .json file from target/idl folder for your anchor program. 
+
+Once you have that working, you have to see if all the dependencies added that you have in Cargo.toml. In this example we have deployed the program on devnet and you can use the signature you get to see the logs and transaction history. 
+
+            cargo run
+
+This commands runs you main.rs file.
+
+### More Stuff
+1. Add Askama and Axum and see if you can get it running live.
+2. I will be adding more tests to the program. Then, I also plan to add a frontend to this.
