@@ -48,6 +48,8 @@ Once you have that working, you have to see if all the dependencies added that y
 
 This commands runs you main.rs file.
 
+Update: The client side code now contains askama web server, it takes the form input where we put the poll and candidate information. Then we press initialize and those polls are initialized and each initialize function gets called. Then, all polls can be viewed in /polls section. More stuff todo do is get the voting function running.
+
 ### More Stuff
-1. Add Askama and Axum and see if you can get it running live.
+1. Update the Askama so that posts are in order and only polls show, not candidates.
 2. I will be adding more tests to the program. Then, I also plan to add a frontend to this.
