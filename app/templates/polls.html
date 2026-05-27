@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Polls</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #333; }
+        .tile { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 2px 2px 8px rgba(0,0,0,0.08); }
+        .poll-name { font-size: 20px; font-weight: bold; color: #333; }
+        .field { margin: 8px 0; font-size: 14px; color: #555; }
+        .label { font-weight: bold; }
+        .address { font-size: 11px; word-break: break-all; color: #999; margin-top: 8px; }
+        .address a { color: #4a90e2; }
+        .back { display: inline-block; margin-top: 24px; color: #4a90e2; text-decoration: none; }
+        .empty { color: #999; text-align: center; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <h1>All Polls</h1>
+    {% if polls.is_empty() %}
+    <div class="empty">No polls found on devnet yet.</div>
+    {% else %}
+    {% for poll in polls %}
+    <div class="tile">
+        <div class="poll-name">{{ poll.poll_name }}</div>
+        <div class="field"><span class="label">Description:</span> {{ poll.poll_description }}</div>
+        <div class="field"><span class="label">Start:</span> {{ poll.poll_start }}</div>
+        <div class="field"><span class="label">End:</span> {{ poll.poll_end }}</div>
+        <div class="address">
+            <a href="https://explorer.solana.com/address/{{ poll.address }}?cluster=devnet" target="_blank">
+                {{ poll.address }}
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+    <a class="back" href="/">← Create a new poll</a>
+</body>
+</html>
