@@ -1,13 +1,13 @@
 use std::{sync::Arc};
 use anchor_client::{anchor_lang,Client, Cluster, CommitmentConfig as SolanaCommitmentConfig};  // brings anchor_lang into root scope
-use anchor_lang::{AnchorDeserialize, declare_program, system_program};
+use anchor_lang::{AccountDeserialize, Discriminator, declare_program, system_program};
 //use anyhow::Ok;
 use askama::Template;
-use axum::{Form, Router, http::StatusCode, response::{Html, IntoResponse, Response}, routing::{get, post}};
+use axum::{Form, Router, extract::Query, http::StatusCode, response::{Html, IntoResponse, Response}, routing::{get, post}};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use solana_rpc_client::rpc_client::RpcClient;
-use solana_rpc_client_api::{config::{RpcAccountInfoConfig, RpcProgramAccountsConfig}, filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}, response::UiAccountData};
+//use solana_rpc_client_api::{config::{RpcAccountInfoConfig, RpcProgramAccountsConfig}, filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}, response::UiAccountData};
 use solana_sdk::{pubkey::Pubkey, signature::read_keypair_file};
 
 declare_program!(voting);
@@ -79,7 +79,23 @@ struct PollInfo {
     poll_description: String,
     poll_start: String,
     poll_end: String,
+    poll_end_ts: i64,
+    poll_start_ts: i64,
     address: String,
+    candidates: Vec<CandidateInfo>,
+}
+
+struct CandidateInfo {
+    candidate_name: String,
+    votes: u64,
+}
+
+
+#[derive(Deserialize)]
+struct VoteForm {
+    poll_address: String,
+    poll_start_ts: i64,
+    candidate_name: String,
 }
 
 
@@ -108,7 +124,8 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(show_form_handler))
         .route("/init", post(initialize_handler))
-        .route("/polls", get(show_polls_handler));
+        .route("/polls", get(show_polls_handler))
+        .route("/vote", get(vote_handler));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     println!("Listening on http://127.0.0.1:3000");
@@ -230,6 +247,7 @@ async fn initialize_handler(
         .instruction(init_c2_ix)
         .send()
         .await.unwrap();
+    
 
     // 4. Show the poll tile
     Ok(HtmlTemplate(PollTemplate {
@@ -281,24 +299,106 @@ async fn show_polls_handler() -> Result<impl IntoResponse, AppError> {
     //     ..Default::default()
     // };
 
-    let accounts = connection
+    let program_id = voting::ID;
+
+    let all_accounts = connection
         .get_program_accounts(&voting::ID)
         .map_err(|e| AppError::Other(e.to_string()))?;
 
-    let mut polls = vec![];
-    for (pubkey, account) in accounts {
-        if let Ok(poll) = voting::accounts::PollAccount::deserialize(
-            &mut &account.data[8..]
-        ) {
-            polls.push(PollInfo {
-                poll_name: poll.poll_name,
-                poll_description: poll.poll_description,
-                poll_start: format_timestamp(poll.poll_start),
-                poll_end: format_timestamp(poll.poll_end),
-                address: pubkey.to_string(),
-            });
+
+    let poll_disc = voting::accounts::PollAccount::DISCRIMINATOR;
+    let cand_disc = voting::accounts::CandidateAccount::DISCRIMINATOR;
+
+    // collecting candidates
+    let mut candidate_map: std::collections::HashMap<Pubkey, voting::accounts::CandidateAccount> = std::collections::HashMap::new();
+
+    for (pubkey, account) in &all_accounts {
+        if account.data.len() >= 8 && account.data[0..8] == *cand_disc {
+            let mut data: &[u8] = &account.data;
+            if let Ok(c) = voting::accounts::CandidateAccount::try_deserialize(&mut data) {
+                candidate_map.insert(*pubkey, c);
+            }
         }
     }
+
+    let mut polls = vec![];
+    for (poll_pubkey, account) in &all_accounts {
+        if account.data.len() >= 8 && account.data[0..8] == *poll_disc {
+            
+            // 2. CHANGE THIS LINE: Use AccountDeserialize instead of standard deserialize
+            let mut data_slice: &[u8] = &account.data;
+            if let Ok(poll) = voting::accounts::PollAccount::try_deserialize(&mut data_slice) {
+
+
+                let poll_id = (poll.poll_start % i32::MAX as i64) as i32;
+                let poll_id_bytes = poll_id.to_le_bytes();
+
+                let (expected_poll_pda, _bump) = Pubkey::find_program_address(
+                    &[b"poll", &poll_id_bytes.as_ref()], 
+                    &program_id,
+                );
+
+                let verified_poll_id_bytes = match expected_poll_pda == *poll_pubkey {
+                    true => Some(poll_id_bytes),
+                    false => {
+                        let poll_id_alt = (poll.poll_end % i32::MAX as i64) as i32;
+                        let poll_id_alt_bytes = poll_id_alt.to_le_bytes();
+                        let (alt_pda, _) = Pubkey::find_program_address(
+                            &[b"poll", &poll_id_alt_bytes],
+                            &program_id,
+                        );
+                        match alt_pda == *poll_pubkey {
+                            true => Some(poll_id_alt_bytes),
+                            false => None,   // can't recover poll_id
+                        }
+                    }
+                };
+
+                 // Match candidates using recovered poll_id bytes
+                let mut candidates = vec![];
+                if let Some(id_bytes) = verified_poll_id_bytes {  // ← unwrap here
+                    for (cand_pubkey, candidate) in &candidate_map {
+                        let (expected_cand_pda, _) = Pubkey::find_program_address(
+                            &[&id_bytes, candidate.candidate_name.as_bytes()],  // ← id_bytes
+                            &program_id,
+                        );
+                        if expected_cand_pda == *cand_pubkey {
+                            candidates.push(CandidateInfo {
+                                candidate_name: candidate.candidate_name.clone(),
+                                votes: candidate.candiate_votes as u64,
+                            });
+                        }
+                    }
+                }
+                
+                polls.push(PollInfo {
+                    poll_name: poll.poll_name,
+                    poll_description: poll.poll_description,
+                    poll_start: format_timestamp(poll.poll_start),
+                    poll_end: format_timestamp(poll.poll_end),
+                    poll_end_ts: poll.poll_end,
+                    poll_start_ts: poll.poll_start,
+                    address: poll_pubkey.to_string(),
+                    candidates,
+                });
+            }
+        }
+    }
+
+    // let mut polls = vec![];
+    // for (pubkey, account) in accounts {
+    //     if let Ok(poll) = voting::accounts::PollAccount::deserialize(
+    //         &mut &account.data[8..]
+    //     ) {
+    //         polls.push(PollInfo {
+    //             poll_name: poll.poll_name,
+    //             poll_description: poll.poll_description,
+    //             poll_start: format_timestamp(poll.poll_start),
+    //             poll_end: format_timestamp(poll.poll_end),
+    //             address: pubkey.to_string(),
+    //         });
+    //     }
+    // }
 
     
     // let mut polls = vec![];
@@ -321,6 +421,70 @@ async fn show_polls_handler() -> Result<impl IntoResponse, AppError> {
 
     Ok(HtmlTemplate(PollsTemplate { polls }))
 }
+
+
+async fn vote_handler(
+    Query(form): Query<VoteForm>,
+) -> Result<impl IntoResponse, AppError> {
+    let payer = read_keypair_file("/home/aryan/.config/solana/id.json")
+        .expect("Failed to read keypair file");
+
+    let provider = Client::new_with_options(
+        Cluster::Devnet,
+        Arc::new(payer),
+        SolanaCommitmentConfig::confirmed(),
+    );
+
+    let program = provider.program(voting::ID)?;
+    let program_id = voting::ID;
+
+    // Recover poll_id from poll_start_ts — same formula as initialize_handler
+    let poll_id: i32 = (form.poll_start_ts % i32::MAX as i64) as i32;
+
+    let (poll_pda, _) = Pubkey::find_program_address(
+        &[b"poll", &poll_id.to_le_bytes()],
+        &program_id,
+    );
+
+    // Verify recovered PDA matches the one sent from the form
+    let expected_address = form.poll_address.parse::<Pubkey>()
+        .map_err(|e| AppError::Other(e.to_string()))?;
+
+    if poll_pda != expected_address {
+        return Err(AppError::Other("Poll PDA mismatch".to_string()));
+    }
+
+    let (candidate_pda, _) = Pubkey::find_program_address(
+        &[&poll_id.to_le_bytes(), form.candidate_name.as_bytes()],
+        &program_id,
+    );
+
+    let vote_ix = program
+        .request()
+        .accounts(accounts::Vote {
+            signer: program.payer(),
+            poll_acc: poll_pda,
+            candidate_acc: candidate_pda,
+        })
+        .args(args::Vote {
+            poll_id,
+            input_candidate_name: form.candidate_name.clone(),
+        })
+        .instructions()
+        .remove(0);
+
+    let signature = program
+        .request()
+        .instruction(vote_ix)
+        .send()
+        .await
+        .map_err(|e| AppError::Other(e.to_string()))?;
+
+
+    // Redirect back to polls page after voting
+    Ok(axum::response::Redirect::to("/polls"))
+}
+
 
 
 // async fn show_poll_handler() -> impl IntoResponse {
