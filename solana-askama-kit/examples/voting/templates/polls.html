@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>All Polls</title>
+<style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #333; }
+    .tile { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 2px 2px 8px rgba(0,0,0,0.08); }
+    .poll-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 8px; }
+    .field { margin: 8px 0; font-size: 14px; color: #555; }
+    .label { font-weight: bold; }
+    .candidates { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+    .candidate-card { background: #f0f4ff; border-radius: 6px; padding: 10px 16px; min-width: 120px; }
+    .candidate-name { font-weight: bold; color: #4a90e2; }
+    .candidate-votes { font-size: 12px; color: #888; margin-top: 4px; }
+    .address { font-size: 11px; word-break: break-all; color: #999; margin-top: 12px; }
+    .address a { color: #4a90e2; }
+    .back { display: inline-block; margin-top: 24px; color: #4a90e2; text-decoration: none; }
+    .empty { color: #999; text-align: center; margin-top: 40px; }
+    .no-candidates { font-size: 13px; color: #aaa; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>All Polls</h1>
+{% if polls.is_empty() %}
+<div class="empty">No polls found on devnet yet.</div>
+{% else %}
+{% for poll in polls %}
+<div class="tile">
+    <div class="poll-name">{{ poll.poll_name }}</div>
+    <div class="field"><span class="label">Description:</span> {{ poll.poll_description }}</div>
+    <div class="field"><span class="label">Start:</span> {{ poll.poll_start }}</div>
+    <div class="field"><span class="label">End:</span> {{ poll.poll_end }}</div>
+
+    {% if poll.candidates.is_empty() %}
+    <div class="no-candidates">No candidates found.</div>
+    {% else %}
+    <div class="candidates">
+        {% for candidate in poll.candidates %}
+
+        <div class="candidate-card">
+            <div class="candidate-name">
+                <a href="/vote?poll_address={{ poll.address }}&poll_start_ts={{ poll.poll_start_ts }}&candidate_name={{ candidate.candidate_name }}"
+                style="text-decoration: none; color: #4a90e2;">
+                    {{ candidate.candidate_name }}
+                </a>
+            </div>
+            <div class="candidate-votes">{{ candidate.votes }} votes</div>
+        </div>
+        <!-- <div class="candidate-card">
+            <div class="candidate-name">{{ candidate.candidate_name }}</div>
+            <div class="candidate-votes">{{ candidate.votes }} votes</div>
+            <form method="POST" action="/vote">
+                <input type="hidden" name="poll_address" value="{{ poll.address }}"/>
+                <input type="hidden" name="poll_start_ts" value="{{ poll.poll_start_ts }}"/>
+                <input type="hidden" name="candidate_name" value="{{ candidate.candidate_name }}"/>
+                <button type="submit">Vote</button>
+            </form>
+        </div> -->
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="address">
+        <a href="https://explorer.solana.com/address/{{ poll.address }}?cluster=devnet" target="_blank">
+            {{ poll.address }}
+        </a>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+<a class="back" href="/">← Create a new poll</a>
+</body>
+</html>

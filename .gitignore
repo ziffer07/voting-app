@@ -7,3 +7,4 @@ test-ledger
 .yarn
 .surfpool
 app/idls
+solana-askama-kit/examples/voting/idls/voting.json

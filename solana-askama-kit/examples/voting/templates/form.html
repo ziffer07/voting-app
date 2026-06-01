@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Poll</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #333; }
+        .field { margin: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+        label { font-weight: bold; color: #555; }
+        input, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { margin-top: 20px; padding: 10px 24px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #357abd; }
+    </style>
+</head>
+<body>
+    <h1>Create a New Poll</h1>
+    <form method="POST" action="/init">
+        <div class="field">
+            <label>Poll Name</label>
+            <input type="text" name="poll_name" required />
+        </div>
+        <div class="field">
+            <label>Description</label>
+            <textarea name="poll_description" rows="3" required></textarea>
+        </div>
+        <div class="field">
+            <label>Start Date</label>
+            <input type="datetime-local" name="poll_start" required />
+        </div>
+        <div class="field">
+            <label>End Date</label>
+            <input type="datetime-local" name="poll_end" required />
+        </div>
+        <div class="field">
+            <label>Candidate 1</label>
+            <input type="text" name="candidate1" required />
+        </div>
+        <div class="field">
+            <label>Candidate 2</label>
+            <input type="text" name="candidate2" required />
+        </div>
+        <button type="submit">Initialize Poll</button>
+    </form>
+</body>
+</html>

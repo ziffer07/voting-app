@@ -1,0 +1,46 @@
+[package]
+name = "solana-askama-kit"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <you@example.com>"]
+description = "Full-stack Rust kit for building Solana dApps with Axum and Askama"
+license = "MIT"
+repository = "https://github.com/yourname/solana-askama-kit"
+keywords = ["solana", "anchor", "axum", "askama", "web3"]
+categories = ["web-programming", "cryptography::cryptocurrencies"]
+readme = "README.md"
+
+[lib]
+name = "solana_askama_kit"
+path = "src/lib.rs"
+
+[dependencies]
+# Solana
+anchor-client = { version = "1.0.2", features = ["async"] }
+anchor-lang = "1.0.2"
+solana-rpc-client = "4.0.0"
+solana-sdk = "4.0.1"
+
+# Web
+axum = "0.8.9"
+askama = "0.16.0"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+
+# Error handling
+thiserror = "2.0.18"
+anyhow = "1"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }

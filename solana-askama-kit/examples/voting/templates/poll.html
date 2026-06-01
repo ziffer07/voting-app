@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ poll_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .tile { border: 1px solid #ddd; border-radius: 8px; padding: 24px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-top: 0; }
+        .field { margin: 12px 0; }
+        .label { font-weight: bold; color: #555; font-size: 13px; text-transform: uppercase; }
+        .value { margin-top: 4px; font-size: 15px; }
+        .candidates { display: flex; gap: 16px; margin-top: 8px; }
+        .candidate { background: #f0f4ff; border-radius: 6px; padding: 10px 20px; font-weight: bold; color: #4a90e2; }
+        .sig { font-size: 12px; word-break: break-all; color: #666; }
+        .sig a { color: #4a90e2; }
+        .nav { display: flex; gap: 16px; margin-top: 24px; }
+        .nav a { color: #4a90e2; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="tile">
+        <h1>{{ poll_name }}</h1>
+        <div class="field">
+            <div class="label">Description</div>
+            <div class="value">{{ poll_description }}</div>
+        </div>
+        <div class="field">
+            <div class="label">Start</div>
+            <div class="value">{{ poll_start }}</div>
+        </div>
+        <div class="field">
+            <div class="label">End</div>
+            <div class="value">{{ poll_end }}</div>
+        </div>
+        <div class="field">
+            <div class="label">Candidates</div>
+            <div class="candidates">
+                <div class="candidate">{{ candidate1 }}</div>
+                <div class="candidate">{{ candidate2 }}</div>
+            </div>
+        </div>
+        <div class="field">
+            <div class="label">Transaction</div>
+            <div class="sig">
+                <a href="https://explorer.solana.com/tx/{{ poll_signature }}?cluster=devnet" target="_blank">
+                    {{ poll_signature }}
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="nav">
+        <a href="/">← Create another poll</a>
+        <a href="/polls">View all polls →</a>
+    </div>
+</body>
+</html>

@@ -1,7 +1,9 @@
 [workspace]
 members = [
     "programs/*",
-    "app"
+    "app",
+    "solana-askama-kit",
+    "solana-askama-kit/examples/voting"
 ]
 resolver = "2"
 

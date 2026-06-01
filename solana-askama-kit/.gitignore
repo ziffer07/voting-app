@@ -1,0 +1,6 @@
+/target
+/examples/*/target
+Cargo.lock
+.env
+*.json.bak
+solana-askama-kit/examples/voting/idls/voting.json
